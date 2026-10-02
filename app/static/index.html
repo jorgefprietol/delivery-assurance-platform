@@ -1,21 +1,170 @@
 <!doctype html>
 <html lang="es">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Delivery Assurance · Control de entregas</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
-<body>
-<aside class="sidebar"><a class="brand" href="/">DA<span>Delivery Assurance</span></a><div class="workspace-label">WORKSPACE DE INGENIERÍA</div><label for="project">Proyecto activo</label><select id="project" aria-label="Proyecto activo"></select><button id="new-project" class="secondary">+ Nuevo proyecto</button><nav aria-label="Secciones"><a href="#overview">Vista general</a><a href="#requirements">Requisitos</a><a href="#risks">Registro de riesgos</a><a href="#releases">Entregas y evidencias</a><a href="#audit">Actividad</a></nav><div class="sidebar-footer">Requisitos → Evidencia → Entrega<br><span>Control y trazabilidad, en un solo lugar.</span></div></aside>
-<main>
-<header><div><p class="eyebrow">ENGINEERING OPERATIONS / CONTROL DE CALIDAD</p><h1 id="project-name">Control de entregas</h1><p id="project-description">Conecta los requisitos con la evidencia que respalda cada entrega.</p></div><span class="badge">v1.0</span></header>
-<section id="connection" class="connection"><form id="connect-form"><label for="api-key">Credencial del workspace</label><div class="inline"><input id="api-key" type="password" required minlength="32" autocomplete="off" placeholder="Introduce la API key configurada"><button type="submit">Conectar</button></div><small>La credencial se conserva en memoria durante esta sesión.</small></form></section>
-<p id="notice" role="status" aria-live="polite"></p>
-<div id="content" hidden>
-<section id="overview" class="metrics"><article><span>REQUISITOS</span><strong id="total">0</strong><small>Alcance de la entrega</small></article><article><span>VERIFICACIÓN</span><strong id="coverage">0%</strong><small>Evidencia aprobada vigente</small></article><article><span>RIESGOS ALTOS ABIERTOS</span><strong id="risk-count">0</strong><small>Probabilidad × impacto ≥ 15</small></article></section>
-<section class="gate"><div><p class="eyebrow">VALIDACIÓN DE ENTREGA</p><h2 id="gate-title">Entrega bloqueada</h2><ul id="blockers"></ul></div><form id="release-form"><label for="release-label">Versión</label><div class="inline"><input id="release-label" placeholder="v1.0.0" required pattern="[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}"><button id="release-button" type="submit">Registrar entrega</button></div></form></section>
-<section id="requirements" class="panel"><div class="section-heading"><div><p class="eyebrow">ALCANCE Y ACEPTACIÓN</p><h2>Requisitos</h2></div><button id="new-requirement" class="secondary">+ Añadir requisito</button></div><div class="table-wrap"><table><thead><tr><th>Requisito / criterio de aceptación</th><th>Prioridad</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="requirement-rows"></tbody></table></div></section>
-<section id="risks" class="panel"><div class="section-heading"><div><p class="eyebrow">PREVENCIÓN Y RESPUESTA</p><h2>Registro de riesgos</h2></div><button id="new-risk" class="secondary">+ Registrar riesgo</button></div><div id="risk-cards" class="risk-grid"></div></section>
-<section id="releases" class="panel"><p class="eyebrow">TRAZABILIDAD</p><h2>Entregas y evidencias</h2><p class="muted">Cada entrega conserva una instantánea de los requisitos, riesgos y pruebas, con su huella SHA-256.</p><div id="release-list"></div><h3>Evidencia de pruebas</h3><div id="evidence-list"></div></section>
-<section id="audit" class="panel"><p class="eyebrow">HISTORIAL DEL WORKSPACE</p><h2>Actividad</h2><ol id="activity"></ol></section>
-</div>
-<footer>Delivery Assurance Platform · Ingeniería de requisitos, calidad y entrega continua</footer>
-</main>
-<dialog id="editor"><form id="editor-form"><div class="section-heading"><h2 id="editor-title"></h2><button id="close-dialog" type="button" class="secondary" aria-label="Cerrar">×</button></div><div id="editor-fields"></div><button type="submit">Guardar</button><p id="editor-error" role="alert"></p></form></dialog>
-</body></html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Delivery Assurance · Control de entregas</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/">DA<span>Delivery Assurance</span></a>
+      <div class="workspace-label">WORKSPACE DE INGENIERÍA</div>
+      <label for="project">Proyecto activo</label
+      ><select id="project" aria-label="Proyecto activo"></select
+      ><button id="new-project" class="secondary">+ Nuevo proyecto</button>
+      <nav aria-label="Secciones">
+        <a href="#overview">Vista general</a
+        ><a href="#requirements">Requisitos</a
+        ><a href="#risks">Registro de riesgos</a
+        ><a href="#releases">Entregas y evidencias</a
+        ><a href="#audit">Actividad</a>
+      </nav>
+      <div class="sidebar-footer">
+        Requisitos → Evidencia → Entrega<br /><span
+          >Control y trazabilidad, en un solo lugar.</span
+        >
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">ENGINEERING OPERATIONS / CONTROL DE CALIDAD</p>
+          <h1 id="project-name">Control de entregas</h1>
+          <p id="project-description">
+            Conecta los requisitos con la evidencia que respalda cada entrega.
+          </p>
+        </div>
+        <span class="badge">v1.0</span>
+      </header>
+      <section id="connection" class="connection">
+        <form id="connect-form">
+          <label for="api-key">Credencial del workspace</label>
+          <div class="inline">
+            <input
+              id="api-key"
+              type="password"
+              required
+              minlength="32"
+              autocomplete="off"
+              placeholder="Introduce la API key configurada"
+            /><button type="submit">Conectar</button>
+          </div>
+          <small
+            >La credencial se conserva en memoria durante esta sesión.</small
+          >
+        </form>
+      </section>
+      <p id="notice" role="status" aria-live="polite"></p>
+      <div id="content" hidden>
+        <section id="overview" class="metrics">
+          <article>
+            <span>REQUISITOS</span><strong id="total">0</strong
+            ><small>Alcance de la entrega</small>
+          </article>
+          <article>
+            <span>VERIFICACIÓN</span><strong id="coverage">0%</strong
+            ><small>Evidencia aprobada vigente</small>
+          </article>
+          <article>
+            <span>RIESGOS ALTOS ABIERTOS</span><strong id="risk-count">0</strong
+            ><small>Probabilidad × impacto ≥ 15</small>
+          </article>
+        </section>
+        <section class="gate">
+          <div>
+            <p class="eyebrow">VALIDACIÓN DE ENTREGA</p>
+            <h2 id="gate-title">Entrega bloqueada</h2>
+            <ul id="blockers"></ul>
+          </div>
+          <form id="release-form">
+            <label for="release-label">Versión</label>
+            <div class="inline">
+              <input
+                id="release-label"
+                placeholder="v1.0.0"
+                required
+                pattern="[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}"
+              /><button id="release-button" type="submit">
+                Registrar entrega
+              </button>
+            </div>
+          </form>
+        </section>
+        <section id="requirements" class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">ALCANCE Y ACEPTACIÓN</p>
+              <h2>Requisitos</h2>
+            </div>
+            <button id="new-requirement" class="secondary">
+              + Añadir requisito
+            </button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Requisito / criterio de aceptación</th>
+                  <th>Prioridad</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="requirement-rows"></tbody>
+            </table>
+          </div>
+        </section>
+        <section id="risks" class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">PREVENCIÓN Y RESPUESTA</p>
+              <h2>Registro de riesgos</h2>
+            </div>
+            <button id="new-risk" class="secondary">+ Registrar riesgo</button>
+          </div>
+          <div id="risk-cards" class="risk-grid"></div>
+        </section>
+        <section id="releases" class="panel">
+          <p class="eyebrow">TRAZABILIDAD</p>
+          <h2>Entregas y evidencias</h2>
+          <p class="muted">
+            Cada entrega conserva una instantánea de los requisitos, riesgos y
+            pruebas, con su huella SHA-256.
+          </p>
+          <div id="release-list"></div>
+          <h3>Evidencia de pruebas</h3>
+          <div id="evidence-list"></div>
+        </section>
+        <section id="audit" class="panel">
+          <p class="eyebrow">HISTORIAL DEL WORKSPACE</p>
+          <h2>Actividad</h2>
+          <ol id="activity"></ol>
+        </section>
+      </div>
+      <footer>
+        Delivery Assurance Platform · Ingeniería de requisitos, calidad y
+        entrega continua
+      </footer>
+    </main>
+    <dialog id="editor">
+      <form id="editor-form">
+        <div class="section-heading">
+          <h2 id="editor-title"></h2>
+          <button
+            id="close-dialog"
+            type="button"
+            class="secondary"
+            aria-label="Cerrar"
+          >
+            ×
+          </button>
+        </div>
+        <div id="editor-fields"></div>
+        <button type="submit">Guardar</button>
+        <p id="editor-error" role="alert"></p>
+      </form>
+    </dialog>
+  </body>
+</html>

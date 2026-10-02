@@ -3,7 +3,7 @@ services:
     build: .
     image: delivery-assurance-platform:local
     ports:
-      - "127.0.0.1:${APP_PORT:-18090}:8080"
+      - "127.0.0.1:${APP_PORT:-18130}:8080"
     environment:
       API_KEY: ${API_KEY:?Run scripts/setup.ps1 or set API_KEY}
       DATABASE_PATH: /data/delivery.db
@@ -20,4 +20,8 @@ services:
     restart: unless-stopped
 volumes:
   delivery-data:
-
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: ${DELIVERY_SUBNET:-10.254.120.0/28}

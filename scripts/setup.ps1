@@ -9,6 +9,5 @@ $bytes = New-Object byte[] 32
 $generator = [Security.Cryptography.RandomNumberGenerator]::Create()
 try { $generator.GetBytes($bytes) } finally { $generator.Dispose() }
 $key = ([BitConverter]::ToString($bytes)).Replace('-', '').ToLowerInvariant()
-"API_KEY=$key`nAPP_PORT=18090" | Set-Content -LiteralPath $envPath -Encoding utf8
+"API_KEY=$key`nAPP_PORT=18130" | Set-Content -LiteralPath $envPath -Encoding utf8
 Write-Host 'Local configuration created in .env. Use its API_KEY to connect the workspace.'
-

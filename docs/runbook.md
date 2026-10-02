@@ -2,13 +2,13 @@
 
 ## Configuración
 
-`API_KEY`: mínimo 32 caracteres; genera 32 bytes aleatorios con `scripts/setup.ps1`. `APP_PORT`: 18090 por defecto, loopback. `DATABASE_PATH`: `/data/delivery.db` en el contenedor. `.env`, bases y artefactos se excluyen del repositorio y del contexto de construcción.
+`API_KEY`: mínimo 32 caracteres; genera 32 bytes aleatorios con `scripts/setup.ps1`. `APP_PORT`: 18130 por defecto, loopback. `DATABASE_PATH`: `/data/delivery.db` en el contenedor. `DELIVERY_SUBNET`: `10.254.120.0/28` por defecto; permite elegir un rango libre si Docker agota los pools automáticos o hay conflicto con redes del host. `.env`, bases y artefactos se excluyen del repositorio y del contexto de construcción.
 
 ```powershell
 docker compose up -d --build --wait
 docker compose ps
 docker compose logs --tail 100
-Invoke-RestMethod http://127.0.0.1:18090/health/ready
+Invoke-RestMethod http://127.0.0.1:18130/health/ready
 ```
 
 Liveness informa que el proceso responde; readiness consulta la base. No exponen datos de negocio. El contrato se obtiene en `/openapi.json`. Los datos `/api` necesitan `X-API-Key`. Los logs incluyen ruta, estado y correlación del request; no registran headers ni bodies.

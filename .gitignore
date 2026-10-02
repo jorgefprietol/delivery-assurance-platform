@@ -6,6 +6,9 @@ __pycache__/
 .coverage
 .env
 data/
+backups/
+*.db
+*.db-wal
+*.db-shm
 artifacts/
 runtime-resolve.json
-

@@ -44,12 +44,12 @@ cd delivery-assurance-platform
 docker compose up -d --build --wait
 ```
 
-Abre **http://127.0.0.1:18090** e introduce el valor `API_KEY` de tu archivo local `.env`. La credencial se mantiene en memoria en el navegador. El contenedor ejecuta UID 10001, filesystem de solo lectura, capabilities eliminadas y límites de recursos; SQLite se conserva en un volumen. La configuración vincula el puerto a loopback.
+Abre **http://127.0.0.1:18130** e introduce el valor `API_KEY` de tu archivo local `.env`. La credencial se mantiene en memoria en el navegador. El contenedor ejecuta UID 10001, filesystem de solo lectura, capabilities eliminadas y límites de recursos; SQLite se conserva en un volumen. La configuración vincula el puerto a loopback.
 
 En Linux/macOS:
 
 ```bash
-printf 'API_KEY=%s\nAPP_PORT=18090\n' "$(openssl rand -hex 32)" > .env
+printf 'API_KEY=%s\nAPP_PORT=18130\n' "$(openssl rand -hex 32)" > .env
 docker compose up -d --build --wait
 ```
 
@@ -82,14 +82,14 @@ El pipeline publica una imagen; el despliegue a un servidor externo se configura
 
 ## Documentación de ingeniería
 
-| Documento | Contenido |
-| --- | --- |
-| [Especificación](docs/requirements.md) | Alcance, casos de uso, requisitos y trazabilidad |
-| [Arquitectura](docs/architecture.md) | UML, datos, estados, SOLID y decisiones |
-| [Plan de calidad](docs/quality-plan.md) | Estrategia de pruebas, métricas y controles |
-| [Riesgos y evolución](docs/risks-and-roadmap.md) | Riesgos, entrega incremental y deuda técnica |
-| [Operación](docs/runbook.md) | Configuración, recuperación y distribución |
-| [Experiencia de proyecto](docs/portfolio.md) | Descripción verificable para portafolio y CV |
+| Documento                                        | Contenido                                        |
+| ------------------------------------------------ | ------------------------------------------------ |
+| [Especificación](docs/requirements.md)           | Alcance, casos de uso, requisitos y trazabilidad |
+| [Arquitectura](docs/architecture.md)             | UML, datos, estados, SOLID y decisiones          |
+| [Plan de calidad](docs/quality-plan.md)          | Estrategia de pruebas, métricas y controles      |
+| [Riesgos y evolución](docs/risks-and-roadmap.md) | Riesgos, entrega incremental y deuda técnica     |
+| [Operación](docs/runbook.md)                     | Configuración, recuperación y distribución       |
+| [Experiencia de proyecto](docs/portfolio.md)     | Descripción verificable para portafolio y CV     |
 
 ## Alcance actual
 

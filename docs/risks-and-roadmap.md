@@ -2,15 +2,15 @@
 
 ## Registro de riesgos del producto
 
-| Riesgo | P × I | Control actual | Evolución |
-| --- | --- | --- | --- |
-| Pérdida del volumen | 3 × 5 | Persistencia Docker y procedimiento de backup | Backups programados y ejercicios de restore |
-| Sobrescritura concurrente | 3 × 4 | Versiones y transacciones; prueba con escritores simultáneos | Mantener contrato al migrar persistencia |
-| Evidencia obsoleta | 4 × 4 | Revisión vinculada, invalidación y snapshots | Integración con reportes firmados de CI |
-| Credencial compartida comprometida | 3 × 5 | API key aleatoria, loopback, archivos ignorados | OIDC, RBAC, rotación y secretos gestionados |
-| Dependencias vulnerables | 3 × 4 | Auditoría runtime y versiones fijadas | Escaneo de imagen completa y política de remediación |
-| Crecimiento de datos y bloqueo | 3 × 3 | Índice, WAL, timeout y una instancia | Paginación, medición y PostgreSQL si se necesita |
-| Falsa atribución de garantías | 2 × 4 | Documentar evidencia declarada y límites | Revisión de documentación en cada versión |
+| Riesgo                             | P × I | Control actual                                               | Evolución                                            |
+| ---------------------------------- | ----- | ------------------------------------------------------------ | ---------------------------------------------------- |
+| Pérdida del volumen                | 3 × 5 | Persistencia Docker y procedimiento de backup                | Backups programados y ejercicios de restore          |
+| Sobrescritura concurrente          | 3 × 4 | Versiones y transacciones; prueba con escritores simultáneos | Mantener contrato al migrar persistencia             |
+| Evidencia obsoleta                 | 4 × 4 | Revisión vinculada, invalidación y snapshots                 | Integración con reportes firmados de CI              |
+| Credencial compartida comprometida | 3 × 5 | API key aleatoria, loopback, archivos ignorados              | OIDC, RBAC, rotación y secretos gestionados          |
+| Dependencias vulnerables           | 3 × 4 | Auditoría runtime y versiones fijadas                        | Escaneo de imagen completa y política de remediación |
+| Crecimiento de datos y bloqueo     | 3 × 3 | Índice, WAL, timeout y una instancia                         | Paginación, medición y PostgreSQL si se necesita     |
+| Falsa atribución de garantías      | 2 × 4 | Documentar evidencia declarada y límites                     | Revisión de documentación en cada versión            |
 
 ## Proceso incremental
 

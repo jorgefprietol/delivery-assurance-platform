@@ -8,22 +8,22 @@ Las necesidades se derivan de escenarios de control de cambios y entrega. No se 
 
 ## Requisitos y trazabilidad
 
-| ID | Necesidad / criterio de aceptación | Implementación | Evidencia automatizada |
-| --- | --- | --- | --- |
-| RF-01 | Crear proyectos y consultar su alcance aislado | `DeliveryService.project`, dashboard | `test_project_isolation` |
-| RF-02 | Registrar requisitos con aceptación y prioridad | `requirement`, modelos HTTP | `test_invalid_project_input`, recorrido de entrega |
-| RF-03 | Aplicar aprobación antes de implementación | `transition`, `advance` | `test_illegal_domain_transition` |
-| RF-04 | Verificar exclusivamente con evidencia aprobada | `evidence` | `test_evidence_requires_implementation`, `test_failed_retest_blocks_release` |
-| RF-05 | Invalidar verificación cuando cambie el requisito | `revise` | `test_revision_invalidates_evidence_preserves_release` |
-| RF-06 | Bloquear entrega por requisitos pendientes o riesgo alto abierto | `evaluate_gate`, `release` | `test_empty_gate`, `test_high_risk_mitigation` |
-| RF-07 | Conservar instantánea y huella de cada versión | `snapshot_digest`, `release` | `test_complete_delivery_and_snapshot`, `test_snapshot_digest_order_and_tampering` |
-| RF-08 | Registrar cada mutación y preservar el historial | `event`, triggers SQLite | `test_sqlite_persistence_rollback_and_immutability` |
-| RNF-01 | Rechazar cambios basados en versiones obsoletas con HTTP 409 | `check_version` | `test_stale_update`, `test_concurrent_optimistic_writers` |
-| RNF-02 | Proteger datos de negocio mediante API key | dependencia HTTP | `test_authentication`, `test_short_key_rejected` |
-| RNF-03 | Preservar datos tras reiniciar | SQLite WAL + volumen | prueba de persistencia local y job `container` |
-| RNF-04 | Mantener cobertura del backend ≥ 90 % | pytest-cov | gate en CI |
-| RNF-05 | Permitir operación por teclado y tamaños móviles | HTML semántico, CSS responsive | revisión visual y navegación local; auditoría de accesibilidad pendiente |
-| RNF-06 | Exponer diagnósticos y correlación sin registrar credenciales | health, X-Request-ID | `test_health_and_security_headers` |
+| ID     | Necesidad / criterio de aceptación                               | Implementación                       | Evidencia automatizada                                                            |
+| ------ | ---------------------------------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------- |
+| RF-01  | Crear proyectos y consultar su alcance aislado                   | `DeliveryService.project`, dashboard | `test_project_isolation`                                                          |
+| RF-02  | Registrar requisitos con aceptación y prioridad                  | `requirement`, modelos HTTP          | `test_invalid_project_input`, recorrido de entrega                                |
+| RF-03  | Aplicar aprobación antes de implementación                       | `transition`, `advance`              | `test_illegal_domain_transition`                                                  |
+| RF-04  | Verificar exclusivamente con evidencia aprobada                  | `evidence`                           | `test_evidence_requires_implementation`, `test_failed_retest_blocks_release`      |
+| RF-05  | Invalidar verificación cuando cambie el requisito                | `revise`                             | `test_revision_invalidates_evidence_preserves_release`                            |
+| RF-06  | Bloquear entrega por requisitos pendientes o riesgo alto abierto | `evaluate_gate`, `release`           | `test_empty_gate`, `test_high_risk_mitigation`                                    |
+| RF-07  | Conservar instantánea y huella de cada versión                   | `snapshot_digest`, `release`         | `test_complete_delivery_and_snapshot`, `test_snapshot_digest_order_and_tampering` |
+| RF-08  | Registrar cada mutación y preservar el historial                 | `event`, triggers SQLite             | `test_sqlite_persistence_rollback_and_immutability`                               |
+| RNF-01 | Rechazar cambios basados en versiones obsoletas con HTTP 409     | `check_version`                      | `test_stale_update`, `test_concurrent_optimistic_writers`                         |
+| RNF-02 | Proteger datos de negocio mediante API key                       | dependencia HTTP                     | `test_authentication`, `test_short_key_rejected`                                  |
+| RNF-03 | Preservar datos tras reiniciar                                   | SQLite WAL + volumen                 | prueba de persistencia local y job `container`                                    |
+| RNF-04 | Mantener cobertura del backend ≥ 90 %                            | pytest-cov                           | gate en CI                                                                        |
+| RNF-05 | Permitir operación por teclado y tamaños móviles                 | HTML semántico, CSS responsive       | revisión visual y navegación local; auditoría de accesibilidad pendiente          |
+| RNF-06 | Exponer diagnósticos y correlación sin registrar credenciales    | health, X-Request-ID                 | `test_health_and_security_headers`                                                |
 
 ## Historias y casos de uso
 

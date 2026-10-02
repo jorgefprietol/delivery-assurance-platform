@@ -11,7 +11,7 @@ from app.domain import snapshot_digest
 
 
 def main():
-    base = os.getenv("BASE_URL", "http://127.0.0.1:18090")
+    base = os.getenv("BASE_URL", "http://127.0.0.1:18130")
     key = os.environ["API_KEY"]
 
     def request(path, method="GET", body=None, expected=200, authorized=True):
@@ -104,7 +104,7 @@ def main():
         "PATCH",
         {
             "version": 1,
-            "mitigation": "Backup and restore procedure documented and exercised by operators.",
+            "mitigation": "Synthetic acceptance fixture: reviewed backup and recovery plan.",
         },
     )
     release = request(root + "/releases", "POST", {"label": "v1.0.0"}, 201)
