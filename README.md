@@ -74,6 +74,8 @@ $env:API_KEY = ((Get-Content .env | Where-Object { $_ -like 'API_KEY=*' }) -spli
 
 El smoke test comprueba autenticación, transiciones, conflictos de versión, evidencia, bloqueo por riesgos, registro de entrega y auditoría. Genera `artifacts/smoke-release.json`. Las pruebas producen JUnit y cobertura XML; CI exige al menos 90 % de cobertura del backend.
 
+Baseline validado: **32 pruebas aprobadas y 100 % de cobertura del backend**, tanto en Windows como en el runner Linux de GitHub Actions. El pipeline conserva los reportes y valida la persistencia después de reiniciar el contenedor. La cobertura de código no representa validación de usabilidad ni garantías de disponibilidad.
+
 ## Pipeline y distribución
 
 GitHub Actions ejecuta lint, formato, pruebas, auditoría de dependencias, construcción del contenedor, aceptación HTTP y comprobación de persistencia tras reiniciar. Solo después publica en **GHCR** con etiquetas por commit y `latest` o versión, SBOM y procedencia de construcción. Las Actions y la imagen base están fijadas por SHA/digest. Las PR ejecutan validación sin permisos de publicación.

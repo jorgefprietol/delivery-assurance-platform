@@ -11,6 +11,6 @@ RUN pip install --no-cache-dir -r requirements.lock \
 COPY --chown=delivery:delivery app ./app
 USER 10001:10001
 EXPOSE 8080
-HEALTHCHECK --interval=15s --timeout=3s --start-period=15s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health/ready', timeout=2)"
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health/ready', timeout=5)"
 CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--limit-concurrency", "100"]
