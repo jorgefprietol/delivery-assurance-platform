@@ -3,7 +3,9 @@
 import json
 import sqlite3
 from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
+from uuid import uuid4
 
 from app.domain import DomainError
 
@@ -35,6 +37,43 @@ def initialize(path: str) -> None:
     with sqlite3.connect(path) as connection:
         connection.execute("PRAGMA journal_mode=WAL")
         connection.executescript(SCHEMA)
+        connection.execute("BEGIN IMMEDIATE")
+        if connection.execute("SELECT MAX(version) FROM schema_version").fetchone()[0] < 2:
+            rows = connection.execute(
+                "SELECT id, project_id, body FROM records WHERE kind='requirement'"
+            ).fetchall()
+            for identifier, project_id, body in rows:
+                item = json.loads(body)
+                item.update(
+                    status="draft",
+                    revision=item["revision"] + 1,
+                    version=item["version"] + 1,
+                    created_by=item.get("created_by", "legacy-unattributed"),
+                    approved_by=None,
+                    implemented_by=None,
+                    implementation_sha=None,
+                    verified_sha=None,
+                    verified_by=None,
+                )
+                connection.execute(
+                    "UPDATE records SET body=? WHERE kind='requirement' AND id=?",
+                    (json.dumps(item), identifier),
+                )
+                event = {
+                    "id": str(uuid4()),
+                    "project_id": project_id,
+                    "action": "migration.requirement_reset",
+                    "entity_id": identifier,
+                    "version": item["version"],
+                    "at": datetime.now(UTC).isoformat(),
+                    "actor": "system-migration",
+                    "role": "system",
+                }
+                connection.execute(
+                    "INSERT INTO audit(project_id,body) VALUES (?,?)",
+                    (project_id, json.dumps(event)),
+                )
+            connection.execute("INSERT INTO schema_version VALUES (2)")
 
 
 class SQLiteRepository:

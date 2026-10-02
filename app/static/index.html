@@ -36,11 +36,17 @@
             Conecta los requisitos con la evidencia que respalda cada entrega.
           </p>
         </div>
-        <span class="badge">v1.0</span>
+        <div class="identity-box">
+          <span class="badge"
+            >v1.1 · <span id="operator">Sin conexión</span></span
+          ><button id="change-identity" class="secondary" hidden>
+            Cambiar identidad
+          </button>
+        </div>
       </header>
       <section id="connection" class="connection">
         <form id="connect-form">
-          <label for="api-key">Credencial del workspace</label>
+          <label for="api-key">Credencial individual del operador</label>
           <div class="inline">
             <input
               id="api-key"
@@ -48,11 +54,12 @@
               required
               minlength="32"
               autocomplete="off"
-              placeholder="Introduce la API key configurada"
+              placeholder="API key de implementación o revisión"
             /><button type="submit">Conectar</button>
           </div>
           <small
-            >La credencial se conserva en memoria durante esta sesión.</small
+            >Los permisos corresponden a tu identidad. La credencial se conserva
+            en memoria durante esta sesión.</small
           >
         </form>
       </section>

@@ -10,6 +10,15 @@
   --muted: #647582;
   --line: #e1e8ec;
 }
+.identity-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+.identity-box button {
+  font-size: 11px;
+}
 * {
   box-sizing: border-box;
 }
@@ -445,6 +454,13 @@ textarea:focus-visible {
   }
 }
 @media (max-width: 760px) {
+  header {
+    flex-direction: column;
+    gap: 15px;
+  }
+  .identity-box {
+    align-items: flex-start;
+  }
   body {
     display: block;
   }

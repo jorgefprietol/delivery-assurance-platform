@@ -4,11 +4,12 @@ from uuid import uuid4
 
 import pytest
 
+from app.auth import Actor
 from app.domain import DomainError, evaluate_gate, snapshot_digest, transition
 from app.main import create_app
 from app.service import DeliveryService
 from app.storage import SQLiteRepository, initialize
-from tests.conftest import advance, evidence, implemented
+from tests.conftest import COMMIT, REVIEWER_KEY, advance, evidence, implemented
 
 
 @pytest.mark.parametrize(
@@ -29,7 +30,7 @@ def test_illegal_domain_transition(current, target):
 @pytest.mark.parametrize("probability,impact,blocked", [(3, 5, True), (2, 5, False), (5, 5, True)])
 def test_risk_threshold(probability, impact, blocked):
     result = evaluate_gate(
-        [{"id": "r", "status": "verified"}],
+        [{"id": "r", "status": "verified", "implementation_sha": COMMIT, "verified_sha": COMMIT}],
         [
             {
                 "id": "risk",
@@ -52,8 +53,13 @@ def test_authentication(client):
 
 
 def test_short_key_rejected():
-    with pytest.raises(RuntimeError, match="32 characters"):
-        create_app(api_key="short")
+    with pytest.raises(RuntimeError, match="32"):
+        create_app(
+            users=[
+                {"subject": "engineer", "role": "engineer", "api_key": "short"},
+                {"subject": "reviewer", "role": "reviewer", "api_key": "b" * 40},
+            ]
+        )
 
 
 def test_health_and_security_headers(client):
@@ -83,7 +89,11 @@ def test_empty_gate(client, project):
     assert not state["gate"]["ready"]
     assert state["gate"]["coverage_percent"] == 0
     assert (
-        client.post(f"/api/projects/{project['id']}/releases", json={"label": "v1"}).status_code
+        client.post(
+            f"/api/projects/{project['id']}/releases",
+            json={"label": "v1"},
+            headers={"X-API-Key": REVIEWER_KEY},
+        ).status_code
         == 409
     )
 
@@ -91,7 +101,11 @@ def test_empty_gate(client, project):
 def test_complete_delivery_and_snapshot(client, project, requirement):
     req = implemented(client, requirement)
     assert evidence(client, req).status_code == 201
-    response = client.post(f"/api/projects/{project['id']}/releases", json={"label": "v1.0.0"})
+    response = client.post(
+        f"/api/projects/{project['id']}/releases",
+        json={"label": "v1.0.0"},
+        headers={"X-API-Key": REVIEWER_KEY},
+    )
     assert response.status_code == 201
     release = response.json()
     assert release["sha256"] == snapshot_digest(release["snapshot"])
@@ -99,7 +113,11 @@ def test_complete_delivery_and_snapshot(client, project, requirement):
     assert len(release["snapshot"]["evidence"]) == 1
     assert client.get(f"/api/projects/{project['id']}/releases").json()[0] == release
     assert (
-        client.post(f"/api/projects/{project['id']}/releases", json={"label": "v1.0.0"}).status_code
+        client.post(
+            f"/api/projects/{project['id']}/releases",
+            json={"label": "v1.0.0"},
+            headers={"X-API-Key": REVIEWER_KEY},
+        ).status_code
         == 409
     )
     audit = client.get(f"/api/projects/{project['id']}/audit").json()
@@ -125,7 +143,11 @@ def test_failed_retest_blocks_release(client, project, requirement):
 def test_revision_invalidates_evidence_preserves_release(client, project, requirement):
     req = implemented(client, requirement)
     evidence(client, req)
-    release = client.post(f"/api/projects/{project['id']}/releases", json={"label": "v1"}).json()
+    release = client.post(
+        f"/api/projects/{project['id']}/releases",
+        json={"label": "v1"},
+        headers={"X-API-Key": REVIEWER_KEY},
+    ).json()
     req = client.get(f"/api/projects/{project['id']}").json()["requirements"][0]
     updated = client.put(
         f"/api/requirements/{req['id']}",
@@ -236,7 +258,7 @@ def test_sqlite_persistence_rollback_and_immutability(tmp_path):
     path = str(tmp_path / "db.sqlite")
     initialize(path)
     repo = SQLiteRepository(path)
-    service = DeliveryService(repo)
+    service = DeliveryService(repo, Actor("engineer", "engineer"))
     project = service.project({"name": "Persisted"})
     with pytest.raises(RuntimeError), repo.atomic():
         service.record("risk", project["id"], {"title": "Must roll back"})
@@ -264,7 +286,7 @@ def test_concurrent_optimistic_writers(tmp_path):
     path = str(tmp_path / "db.sqlite")
     initialize(path)
     repo = SQLiteRepository(path)
-    service = DeliveryService(repo)
+    service = DeliveryService(repo, Actor("engineer", "engineer"))
     project = service.project({"name": "Concurrent"})
     requirement = service.requirement(project["id"], {"title": "Concurrency"})
     repo.close()
@@ -272,7 +294,9 @@ def test_concurrent_optimistic_writers(tmp_path):
     def writer(_):
         repository = SQLiteRepository(path)
         try:
-            DeliveryService(repository).advance(requirement["id"], 1, "approved")
+            DeliveryService(repository, Actor("reviewer", "reviewer")).advance(
+                requirement["id"], 1, "approved"
+            )
             return 200
         except DomainError as error:
             return error.status

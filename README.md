@@ -20,6 +20,8 @@ Una entrega puede parecer completa aunque existan requisitos sin verificar, prue
 - Control de concurrencia mediante versiones y HTTP 409 ante actualizaciones obsoletas.
 - Historial de cambios y versiones inmutables desde la aplicación y protegidas por triggers SQLite.
 - Interfaz responsive sin dependencias de frontend, exportación de evidencia JSON y contrato OpenAPI.
+- Identidades autenticadas y RBAC: implementación y revisión usan credenciales y permisos distintos.
+- SHA completo del commit en cada implementación y evidencia; una revisión rechaza evidencia de otro commit.
 
 ## Arquitectura
 
@@ -44,12 +46,14 @@ cd delivery-assurance-platform
 docker compose up -d --build --wait
 ```
 
-Abre **http://127.0.0.1:18130** e introduce el valor `API_KEY` de tu archivo local `.env`. La credencial se mantiene en memoria en el navegador. El contenedor ejecuta UID 10001, filesystem de solo lectura, capabilities eliminadas y límites de recursos; SQLite se conserva en un volumen. La configuración vincula el puerto a loopback.
+Abre **http://127.0.0.1:18140** e introduce `ENGINEER_API_KEY` de tu archivo local `.env` para definir alcance, riesgos e implementación. Usa «Cambiar identidad» e introduce `REVIEWER_API_KEY` para aprobar requisitos, registrar evidencia y autorizar entregas. La auditoría registra el sujeto vinculado a la credencial; el cliente no puede elegirlo mediante headers o formularios. Las credenciales se mantienen en memoria en el navegador.
+
+Los sujetos `ENGINEER_ID` y `REVIEWER_ID` se configuran antes de iniciar. Las claves y sujetos deben ser únicos. Para un equipo real, entrega cada credencial a su operador; la configuración de demostración incluye dos cuentas técnicas y no prueba que las manejen dos personas diferentes. El contenedor ejecuta UID 10001, filesystem de solo lectura, capabilities eliminadas y límites de recursos; SQLite se conserva en un volumen. La configuración vincula el puerto a loopback.
 
 En Linux/macOS:
 
 ```bash
-printf 'API_KEY=%s\nAPP_PORT=18130\n' "$(openssl rand -hex 32)" > .env
+printf 'ENGINEER_API_KEY=%s\nREVIEWER_API_KEY=%s\nAPP_PORT=18140\n' "$(openssl rand -hex 32)" "$(openssl rand -hex 32)" > .env
 docker compose up -d --build --wait
 ```
 
@@ -68,13 +72,14 @@ python -m venv .venv
 Para probar el contenedor por HTTP y crear un proyecto de datos sintéticos:
 
 ```powershell
-$env:API_KEY = ((Get-Content .env | Where-Object { $_ -like 'API_KEY=*' }) -split '=', 2)[1]
+$env:ENGINEER_API_KEY = ((Get-Content .env | Where-Object { $_ -like 'ENGINEER_API_KEY=*' }) -split '=', 2)[1]
+$env:REVIEWER_API_KEY = ((Get-Content .env | Where-Object { $_ -like 'REVIEWER_API_KEY=*' }) -split '=', 2)[1]
 ./.venv/Scripts/python.exe -m scripts.smoke
 ```
 
-El smoke test comprueba autenticación, transiciones, conflictos de versión, evidencia, bloqueo por riesgos, registro de entrega y auditoría. Genera `artifacts/smoke-release.json`. Las pruebas producen JUnit y cobertura XML; CI exige al menos 90 % de cobertura del backend.
+El smoke test comprueba identidad, permisos de cada rol, SHA de implementación y evidencia, transiciones, conflictos de versión, bloqueo por riesgos, entrega y auditoría. Usa el commit del checkout o `COMMIT_SHA`, y en CI utiliza `GITHUB_SHA`. Genera `artifacts/smoke-release.json`. Las pruebas producen JUnit y cobertura XML; CI exige al menos 90 % de cobertura del backend.
 
-Baseline validado: **32 pruebas aprobadas y 100 % de cobertura del backend**, tanto en Windows como en el runner Linux de GitHub Actions. El pipeline conserva los reportes y valida la persistencia después de reiniciar el contenedor. La cobertura de código no representa validación de usabilidad ni garantías de disponibilidad.
+Baseline validado: **48 pruebas aprobadas y 100 % de cobertura del backend**. El pipeline conserva los reportes y valida la persistencia después de reiniciar el contenedor. La cobertura de código no representa validación de usabilidad ni garantías de disponibilidad.
 
 ## Pipeline y distribución
 
@@ -95,7 +100,7 @@ El pipeline publica una imagen; el despliegue a un servidor externo se configura
 
 ## Alcance actual
 
-Workspace de un equipo con credencial compartida; sin RBAC ni identidades individuales. La evidencia es registrada por operadores: no ejecuta pruebas de proyectos externos ni certifica automáticamente sus resultados. La huella detecta modificaciones del contenido, pero no es una firma digital. La protección SQLite no impide que un administrador con acceso al volumen altere la base. El despliegue actual es de una instancia; la disponibilidad, la carga y la usabilidad aún requieren medición en un entorno objetivo.
+Workspace de un equipo con identidades respaldadas por credenciales individuales y roles separados. OIDC, MFA y un directorio de usuarios quedan fuera de este baseline. Cada evidencia debe apuntar al SHA implementado; el sistema no consulta GitHub para certificar que el reporte externo sea auténtico o que las pruebas externas hayan pasado. La huella detecta modificaciones del contenido, pero no es una firma digital. La protección SQLite no impide que un administrador con acceso al volumen altere la base. El despliegue actual es de una instancia; disponibilidad, carga, usabilidad y accesibilidad aún requieren medición en un entorno objetivo.
 
 ## Referencias técnicas
 

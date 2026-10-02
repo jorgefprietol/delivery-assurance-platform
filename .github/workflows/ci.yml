@@ -44,8 +44,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Configure isolated workspace
         run: |
-          echo "API_KEY=$(openssl rand -hex 32)" > .env
-          echo "APP_PORT=18130" >> .env
+          echo "ENGINEER_API_KEY=$(openssl rand -hex 32)" > .env
+          echo "REVIEWER_API_KEY=$(openssl rand -hex 32)" >> .env
+          echo "APP_PORT=18140" >> .env
       - run: docker compose up -d --build --wait --wait-timeout 120
       - name: HTTP acceptance against the container
         run: |
@@ -58,10 +59,10 @@ jobs:
           set -a
           source .env
           set +a
-          curl -fsS -H "X-API-Key: $API_KEY" http://127.0.0.1:18130/api/projects > /tmp/projects-before.json
+          curl -fsS -H "X-API-Key: $ENGINEER_API_KEY" http://127.0.0.1:18140/api/projects > /tmp/projects-before.json
           docker compose restart
           docker compose up -d --wait --wait-timeout 120
-          curl -fsS -H "X-API-Key: $API_KEY" http://127.0.0.1:18130/api/projects > /tmp/projects-after.json
+          curl -fsS -H "X-API-Key: $ENGINEER_API_KEY" http://127.0.0.1:18140/api/projects > /tmp/projects-after.json
           diff /tmp/projects-before.json /tmp/projects-after.json
       - name: Container logs
         if: always()

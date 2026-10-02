@@ -2,7 +2,7 @@
 
 ## Estructura y responsabilidades
 
-`domain.py`: políticas puras de transición, preparación y huellas. `service.py`: casos de uso y transacciones. `ports.py`: contrato de persistencia. `storage.py`: SQLite y auditoría. `main.py`: HTTP, validación y autorización. `static/`: interfaz sin framework, construida con elementos DOM y texto seguro.
+`domain.py`: políticas puras de transición, preparación, SHA de commit y huellas. `auth.py`: registro de sujetos autenticados y reglas de rol. `service.py`: casos de uso y transacciones. `ports.py`: contrato de persistencia. `storage.py`: SQLite, migración y auditoría. `main.py`: HTTP, validación y autorización. `static/`: interfaz sin framework, construida con elementos DOM y texto seguro.
 
 SOLID se aplica con responsabilidades separadas, dependencia del servicio hacia un protocolo pequeño y adaptador intercambiable. No se agregan jerarquías de clases sin necesidad. La cohesión de los casos de uso permite revisar las reglas junto con las pruebas de aceptación.
 
@@ -41,7 +41,9 @@ stateDiagram-v2
     draft --> draft: revisar alcance
 ```
 
-Cada evidencia referencia la revisión exacta. Revisar un requisito incrementa `revision` y `version`; avanzar, probar o mitigar incrementa `version`. La evidencia histórica se conserva. El estado verificado solo puede originarse en una evidencia aprobada para la revisión vigente. Una nueva evidencia fallida elimina ese estado.
+Cada implementación guarda `implementation_sha` y `implemented_by`. Cada evidencia referencia la revisión y el commit exactos; un SHA distinto se rechaza en la misma transacción, sin crear registros parciales. Aprobar, verificar y registrar una entrega exige el rol `reviewer`; crear, revisar alcance, implementar y mitigar exige `engineer`. La revisión y autorización comprueban también que el sujeto sea distinto al implementador, incluso si un usuario cambia de rol entre operaciones.
+
+Revisar un requisito incrementa `revision` y `version` y elimina sus atribuciones de aprobación, implementación y verificación. La evidencia histórica se conserva. El estado verificado solo puede originarse en evidencia aprobada para la revisión y el SHA vigentes. Una nueva evidencia fallida elimina ese estado. La entrega exporta `source_commits` y el sujeto aprobador.
 
 ## Modelo de datos
 
@@ -54,7 +56,7 @@ erDiagram
     PROJECT ||--o{ AUDIT : records
 ```
 
-Persistencia física: `records(kind,id,project_id,body)` y `audit(sequence,project_id,body)`. Índice por tipo y proyecto. Los JSON almacenados se validan por SQLite. La integridad referencial se aplica dentro de los casos de uso; no hay borrado de entidades ni interfaz de escritura directa a las tablas. `schema_version` identifica la versión inicial; evoluciones necesitan migraciones explícitas y probadas antes de cambiar el esquema.
+Persistencia física: `records(kind,id,project_id,body)` y `audit(sequence,project_id,body)`. Índice por tipo y proyecto. Los JSON almacenados se validan por SQLite. La integridad referencial se aplica dentro de los casos de uso; no hay borrado de entidades ni interfaz de escritura directa a las tablas. `schema_version` controla la migración transaccional 1 → 2: requisitos anteriores sin atribución/SHA vuelven a borrador con nueva revisión y evento de migración. Las entregas, evidencias y auditoría históricas permanecen intactas; la migración no inventa autorías ni commits. Se verifica su idempotencia y conservación de snapshots.
 
 ## ADR-001: monolito modular
 
@@ -70,4 +72,4 @@ Decisión: copiar proyecto, requisitos, riesgos, evidencia y gate al registrar u
 
 ## ADR-004: interfaz y seguridad
 
-Decisión: frontend servido en el mismo origen, sin HTML interpolado desde datos, scripts externos ni almacenamiento persistente de credenciales. CSP, límite de longitud de campos y API key protegen el workspace local. Consecuencia: identidad compartida; el actor de auditoría representa al workspace, no a una persona identificada. OIDC/RBAC es una ampliación necesaria para equipos con separación de funciones.
+Decisión: frontend servido en el mismo origen, sin HTML interpolado desde datos, scripts externos ni almacenamiento persistente de credenciales. El registro de credenciales del servidor vincula cada clave a un sujeto estable y un rol; las entradas de cliente no pueden suplantarlos. CSP y validación limitan las entradas. Consecuencia: administración de credenciales por el operador del despliegue; OIDC y MFA son una evolución para integrar identidades corporativas. La separación técnica de cuentas no acredita que dos personas diferentes custodien las claves.

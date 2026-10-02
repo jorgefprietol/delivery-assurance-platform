@@ -2,13 +2,15 @@
 
 ## Configuración
 
-`API_KEY`: mínimo 32 caracteres; genera 32 bytes aleatorios con `scripts/setup.ps1`. `APP_PORT`: 18130 por defecto, loopback. `DATABASE_PATH`: `/data/delivery.db` en el contenedor. `DELIVERY_SUBNET`: `10.254.120.0/28` por defecto; permite elegir un rango libre si Docker agota los pools automáticos o hay conflicto con redes del host. `.env`, bases y artefactos se excluyen del repositorio y del contexto de construcción.
+`ENGINEER_API_KEY` y `REVIEWER_API_KEY`: mínimo 32 caracteres ASCII, distintos; `scripts/setup.ps1` genera 32 bytes aleatorios para cada cuenta. `ENGINEER_ID` y `REVIEWER_ID`: sujetos estables y únicos (por defecto `jorge-prieto` y `release-reviewer`). El segundo es una cuenta técnica de revisión: configura un sujeto y custodio individual al utilizarlo en un equipo. `APP_PORT`: 18140 por defecto, loopback. `DATABASE_PATH`: `/data/delivery.db` en el contenedor. `DELIVERY_SUBNET`: `10.254.120.0/28` por defecto; permite elegir un rango libre si Docker agota los pools automáticos o hay conflicto con redes del host. `.env`, bases y artefactos se excluyen del repositorio y del contexto de construcción.
+
+El setup migra la antigua configuración de una API key: conserva su valor como credencial de implementación y genera una credencial independiente de revisión. La migración transaccional de base 1 → 2 reinicia requisitos anteriores a borrador con una revisión nueva; snapshots y auditorías históricos se conservan. Antes de actualizar un workspace operativo, realiza backup y valida el cambio en una copia. El rollback a código 1.0 tras esta migración no está soportado sin recuperar el backup anterior.
 
 ```powershell
 docker compose up -d --build --wait
 docker compose ps
 docker compose logs --tail 100
-Invoke-RestMethod http://127.0.0.1:18130/health/ready
+Invoke-RestMethod http://127.0.0.1:18140/health/ready
 ```
 
 Liveness informa que el proceso responde; readiness consulta la base. No exponen datos de negocio. El contrato se obtiene en `/openapi.json`. Los datos `/api` necesitan `X-API-Key`. Los logs incluyen ruta, estado y correlación del request; no registran headers ni bodies.

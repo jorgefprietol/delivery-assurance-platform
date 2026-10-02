@@ -2,17 +2,18 @@
 
 import logging
 import os
-import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
-from fastapi import Depends, FastAPI, Header, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.auth import Actor, Credentials
 from app.domain import DomainError
 from app.service import DeliveryService
 from app.storage import SQLiteRepository, initialize
@@ -20,6 +21,8 @@ from app.storage import SQLiteRepository, initialize
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=500)]
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=120)]
 Version = Annotated[int, Field(ge=1)]
+Commit = Annotated[str, StringConstraints(pattern=r"^[a-f0-9]{40}$")]
+Credential = Annotated[str | None, Depends(APIKeyHeader(name="X-API-Key", auto_error=False))]
 
 
 class Input(BaseModel):
@@ -42,6 +45,7 @@ class RequirementInput(Input):
 class TransitionInput(Input):
     version: Version
     status: Literal["approved", "implemented"]
+    commit_sha: Commit | None = None
 
 
 class RevisionInput(RequirementInput):
@@ -66,17 +70,16 @@ class EvidenceInput(Input):
     kind: Literal["unit", "integration", "system", "acceptance"]
     outcome: Literal["passed", "failed"]
     reference: Text
+    commit_sha: Commit
 
 
 class ReleaseInput(Input):
     label: Annotated[str, StringConstraints(pattern=r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$")]
 
 
-def create_app(database: str | None = None, api_key: str | None = None) -> FastAPI:
+def create_app(database: str | None = None, users: list[dict] | None = None) -> FastAPI:
     path = database or os.getenv("DATABASE_PATH", "data/delivery.db")
-    key = api_key or os.getenv("API_KEY", "")
-    if len(key) < 32:
-        raise RuntimeError("API_KEY must contain at least 32 characters")
+    credentials = Credentials(users)
 
     @asynccontextmanager
     async def lifespan(_app):
@@ -85,20 +88,19 @@ def create_app(database: str | None = None, api_key: str | None = None) -> FastA
 
     api = FastAPI(
         title="Delivery Assurance API",
-        version="1.0.0",
+        version="1.1.0",
         lifespan=lifespan,
         docs_url=None,
         redoc_url=None,
     )
 
-    def authorized(x_api_key: Annotated[str | None, Header()] = None):
-        if x_api_key is None or not secrets.compare_digest(x_api_key.encode(), key.encode()):
-            raise DomainError("Valid X-API-Key required", 401)
+    def authorized(x_api_key: Credential) -> Actor:
+        return credentials.authenticate(x_api_key)
 
-    def service():
+    def service(actor: Annotated[Actor, Depends(authorized)]):
         repo = SQLiteRepository(path)
         try:
-            yield DeliveryService(repo)
+            yield DeliveryService(repo, actor)
         finally:
             repo.close()
 
@@ -121,8 +123,9 @@ def create_app(database: str | None = None, api_key: str | None = None) -> FastA
                 "form-action 'self'",
             }
         )
-        logging.getLogger("delivery.http").info(
-            "%s %s %s %s", request_id, request.method, request.url.path, response.status_code
+        logging.getLogger("uvicorn.error").info(
+            "request_id=%s method=%s path=%s status=%s",
+            request_id, request.method, request.url.path, response.status_code
         )
         return response
 
@@ -145,6 +148,10 @@ def create_app(database: str | None = None, api_key: str | None = None) -> FastA
 
     auth = [Depends(authorized)]
 
+    @api.get("/api/me", dependencies=auth)
+    def me(actor: Annotated[Actor, Depends(authorized)]):
+        return {"subject": actor.subject, "role": actor.role}
+
     @api.get("/api/projects", dependencies=auth)
     def projects(svc: Service):
         return svc.repo.list("project")
@@ -163,7 +170,7 @@ def create_app(database: str | None = None, api_key: str | None = None) -> FastA
 
     @api.patch("/api/requirements/{identifier}/status", dependencies=auth)
     def update_status(identifier: UUID, body: TransitionInput, svc: Service):
-        return svc.advance(str(identifier), body.version, body.status)
+        return svc.advance(str(identifier), body.version, body.status, body.commit_sha)
 
     @api.put("/api/requirements/{identifier}", dependencies=auth)
     def revise(identifier: UUID, body: RevisionInput, svc: Service):

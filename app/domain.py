@@ -2,6 +2,7 @@
 
 from hashlib import sha256
 from json import dumps
+from re import fullmatch
 
 
 class DomainError(Exception):
@@ -11,6 +12,12 @@ class DomainError(Exception):
 
 
 TRANSITIONS = {"draft": {"approved"}, "approved": {"implemented"}}
+
+
+def validate_commit(commit: str | None) -> str:
+    if not isinstance(commit, str) or not fullmatch(r"[a-f0-9]{40}", commit):
+        raise DomainError("A full lowercase 40-character Git commit SHA is required", 422)
+    return commit
 
 
 def transition(current: str, target: str) -> None:
@@ -23,12 +30,19 @@ def evaluate_gate(requirements: list[dict], risks: list[dict]) -> dict:
     if not requirements:
         blockers.append("At least one requirement is required")
     for requirement in requirements:
-        if requirement["status"] != "verified":
+        if requirement["status"] != "verified" or not requirement.get("implementation_sha"):
             blockers.append(f"Requirement {requirement['id']} is not verified")
+        elif requirement.get("verified_sha") != requirement["implementation_sha"]:
+            blockers.append(f"Requirement {requirement['id']} evidence targets another commit")
     for risk in risks:
         if risk["status"] == "open" and risk["probability"] * risk["impact"] >= 15:
             blockers.append(f"High risk {risk['id']} has no recorded mitigation")
-    verified = sum(item["status"] == "verified" for item in requirements)
+    verified = sum(
+        item["status"] == "verified"
+        and bool(item.get("implementation_sha"))
+        and item.get("verified_sha") == item["implementation_sha"]
+        for item in requirements
+    )
     return {
         "ready": not blockers,
         "blockers": blockers,

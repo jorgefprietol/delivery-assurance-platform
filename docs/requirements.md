@@ -2,7 +2,7 @@
 
 ## Contexto, objetivos y alcance
 
-Producto: workspace de control de calidad para equipos que necesitan justificar la preparación de una entrega. Actor: operador de ingeniería que registra alcance, evidencia y respuestas a riesgos. Resultado: una versión con snapshot verificable. Fuera del alcance inicial: gestión de usuarios, ejecución remota de pruebas, planificación financiera y despliegue de los productos registrados.
+Producto: workspace de control de calidad para equipos que necesitan justificar la preparación de una entrega. Actores: implementador (`engineer`) y revisor (`reviewer`), con sujetos y credenciales distintos. Resultado: una versión con snapshot verificable, atribución de operadores y commits de origen. Fuera del alcance inicial: directorio corporativo de usuarios, ejecución remota de pruebas, planificación financiera y despliegue de los productos registrados.
 
 Las necesidades se derivan de escenarios de control de cambios y entrega. No se atribuyen entrevistas con clientes ni validaciones externas que no se hayan realizado. El documento organiza propósito, funciones, interfaces, restricciones y aceptación; no afirma certificación ni conformidad formal con una norma.
 
@@ -36,4 +36,16 @@ Caso extendido «Registrar entrega»: operador autenticado elige proyecto y etiq
 
 ## Interfaces y restricciones
 
-REST JSON bajo `/api`; contrato en `/openapi.json`. Identificadores UUID, campos limitados y claves extra rechazadas. Todos los requisitos registrados, incluidas prioridades `should` y `could`, forman parte del gate actual. Prioridad indica orden de trabajo, no exclusión de alcance. API key compartida, una instancia, SQLite local en volumen, timeout de escritura de 10 s.
+REST JSON bajo `/api`; contrato en `/openapi.json` con esquema de API key. `/api/me` devuelve sujeto y rol autenticados. Identificadores UUID, campos limitados y claves extra rechazadas. Todos los requisitos registrados, incluidas prioridades `should` y `could`, forman parte del gate actual. Prioridad indica orden de trabajo, no exclusión de alcance. Credenciales individuales, una instancia, SQLite local en volumen, timeout de escritura de 10 s.
+
+## Controles de identidad y commit
+
+| ID    | Criterio de aceptación                                                                                 | Evidencia                                                                                          |
+| ----- | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| RF-09 | Auditoría atribuye el sujeto autenticado e ignora suplantación mediante `X-Actor`                      | `test_authenticated_identity_and_untrusted_header`                                                 |
+| RF-10 | Implementador no aprueba, verifica ni autoriza entregas; revisor no modifica alcance ni implementación | `test_engineer_cannot_approve_verify_or_release`, `test_reviewer_cannot_implement_or_modify_scope` |
+| RF-11 | Evidencia solo se acepta para el SHA completo del commit implementado                                  | `test_commit_is_required_and_evidence_must_match`                                                  |
+| RF-12 | Un cambio de rol no permite revisar la propia implementación                                           | `test_role_change_does_not_allow_self_review`                                                      |
+| RF-13 | Migración conserva entregas históricas y reinicia requisitos sin atribución verificable                | `test_legacy_migration_invalidates_unattributed_verification`                                      |
+
+El SHA se valida como 40 caracteres hexadecimales en minúsculas. Es una asociación al commit; la autenticidad de reportes externos requiere integración adicional con CI o firmas.

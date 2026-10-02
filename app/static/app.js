@@ -1,6 +1,7 @@
 "use strict";
 const $ = (id) => document.getElementById(id);
 let apiKey = "",
+  identity = null,
   projectId = "",
   saveEditor = null;
 const labels = {
@@ -87,6 +88,12 @@ function editor(title, fields, save) {
       input.maxLength = field.area ? 500 : 120;
     }
     if (field.value !== undefined) input.value = field.value;
+    if (field.commit) {
+      input.minLength = 40;
+      input.maxLength = 40;
+      input.pattern = "[a-f0-9]{40}";
+    }
+    if (field.readOnly) input.readOnly = true;
     $("editor-fields").append(label, input);
   }
   saveEditor = save;
@@ -137,13 +144,30 @@ $("connect-form").addEventListener("submit", async (event) => {
   apiKey = $("api-key").value;
   $("api-key").value = "";
   try {
+    identity = await api("/me");
+    $("operator").textContent =
+      `${identity.subject} · ${identity.role === "engineer" ? "Implementación" : "Revisión"}`;
+    $("change-identity").hidden = false;
+    for (const id of ["new-project", "new-requirement", "new-risk"])
+      $(id).disabled = identity.role !== "engineer";
     await loadProjects();
     $("connection").hidden = true;
     if (projectId) notify("Workspace conectado.");
   } catch (error) {
     apiKey = "";
+    identity = null;
+    $("content").hidden = true;
     notify(error.message, true);
   }
+});
+$("change-identity").addEventListener("click", () => {
+  apiKey = "";
+  identity = null;
+  $("content").hidden = true;
+  $("connection").hidden = false;
+  $("operator").textContent = "Sin conexión";
+  $("change-identity").hidden = true;
+  $("api-key").focus();
 });
 $("project").addEventListener("change", () => {
   projectId = $("project").value;
@@ -229,7 +253,8 @@ async function refresh() {
   $("gate-title").textContent = data.gate.ready
     ? "Lista para registrar una entrega"
     : "Entrega bloqueada";
-  $("release-button").disabled = !data.gate.ready;
+  $("release-button").disabled =
+    !data.gate.ready || identity.role !== "reviewer";
   $("blockers").replaceChildren(
     ...data.gate.blockers.map((reason) => {
       const requirement = data.requirements.find((item) =>
@@ -269,23 +294,49 @@ async function refresh() {
       b.addEventListener("click", fn);
       actions.append(b);
     };
-    if (r.status === "draft" || r.status === "approved") {
+    if (
+      (r.status === "draft" && identity.role === "reviewer") ||
+      (r.status === "approved" && identity.role === "engineer")
+    ) {
       const next = r.status === "draft" ? "approved" : "implemented";
-      button(next === "approved" ? "Aprobar" : "Implementado", () =>
-        action(() =>
+      button(next === "approved" ? "Aprobar" : "Implementado", () => {
+        const save = (fields = {}) =>
           api(`/requirements/${r.id}/status`, "PATCH", {
+            ...fields,
             version: r.version,
             status: next,
-          }),
-        ),
-      );
+          });
+        if (next === "implemented")
+          editor(
+            "Vincular implementación",
+            [
+              {
+                name: "commit_sha",
+                label: "SHA completo del commit implementado",
+                commit: true,
+              },
+            ],
+            save,
+          );
+        else action(() => save());
+      });
     }
-    if (["implemented", "verified"].includes(r.status))
+    if (
+      ["implemented", "verified"].includes(r.status) &&
+      identity.role === "reviewer"
+    )
       button("Añadir prueba", () =>
         editor(
           "Evidencia de prueba",
           [
             { name: "test_name", label: "Escenario probado" },
+            {
+              name: "commit_sha",
+              label: "Commit de la implementación",
+              commit: true,
+              value: r.implementation_sha,
+              readOnly: true,
+            },
             {
               name: "kind",
               label: "Nivel",
@@ -309,14 +360,15 @@ async function refresh() {
             }),
         ),
       );
-    button("Revisar", () =>
-      editor(
-        "Revisar requisito · reinicia su verificación",
-        requirementFields(r),
-        (v) =>
-          api(`/requirements/${r.id}`, "PUT", { ...v, version: r.version }),
-      ),
-    );
+    if (identity.role === "engineer")
+      button("Revisar", () =>
+        editor(
+          "Revisar requisito · reinicia su verificación",
+          requirementFields(r),
+          (v) =>
+            api(`/requirements/${r.id}`, "PUT", { ...v, version: r.version }),
+        ),
+      );
     cell.append(actions);
     row.append(detail, priority, state, cell);
     $("requirement-rows").append(row);
@@ -343,7 +395,7 @@ async function refresh() {
       ),
     );
     if (r.mitigation) card.append(node("p", r.mitigation));
-    if (r.status === "open") {
+    if (r.status === "open" && identity.role === "engineer") {
       const b = node("button", "Registrar mitigación", "secondary");
       b.addEventListener("click", () =>
         editor(
@@ -402,7 +454,7 @@ async function refresh() {
       node("p", e.reference),
       node(
         "small",
-        `${r?.title || e.requirement_id} · ${labels[e.kind]} · revisión ${e.revision}${r?.revision !== e.revision ? " · evidencia histórica" : ""}`,
+        `${r?.title || e.requirement_id} · ${labels[e.kind]} · revisión ${e.revision} · commit ${e.commit_sha?.slice(0, 12) || "histórico sin SHA"}${r?.revision !== e.revision ? " · evidencia histórica" : ""}`,
       ),
     );
     $("evidence-list").append(entry);
@@ -417,7 +469,7 @@ async function refresh() {
       .map((e) =>
         node(
           "li",
-          `${new Date(e.at).toLocaleString("es")} · ${e.action} · ${e.entity_id.slice(0, 8)} · v${e.version}`,
+          `${new Date(e.at).toLocaleString("es")} · ${e.actor} (${e.role || "histórico"}) · ${e.action} · ${e.entity_id.slice(0, 8)} · v${e.version}`,
         ),
       ),
   );
