@@ -125,7 +125,10 @@ def create_app(database: str | None = None, users: list[dict] | None = None) -> 
         )
         logging.getLogger("uvicorn.error").info(
             "request_id=%s method=%s path=%s status=%s",
-            request_id, request.method, request.url.path, response.status_code
+            request_id,
+            request.method,
+            request.url.path,
+            response.status_code,
         )
         return response
 

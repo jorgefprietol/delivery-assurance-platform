@@ -22,7 +22,7 @@ Las necesidades se derivan de escenarios de control de cambios y entrega. No se 
 | RNF-02 | Proteger datos de negocio mediante API key                       | dependencia HTTP                     | `test_authentication`, `test_short_key_rejected`                                  |
 | RNF-03 | Preservar datos tras reiniciar                                   | SQLite WAL + volumen                 | prueba de persistencia local y job `container`                                    |
 | RNF-04 | Mantener cobertura del backend ≥ 90 %                            | pytest-cov                           | gate en CI                                                                        |
-| RNF-05 | Permitir operación por teclado y tamaños móviles                 | HTML semántico, CSS responsive       | revisión visual y navegación local; auditoría de accesibilidad pendiente          |
+| RNF-05 | Permitir operación por teclado y tamaños móviles                 | HTML semántico, CSS responsive       | inspección de HTML/CSS; validación visual y accesibilidad pendientes |
 | RNF-06 | Exponer diagnósticos y correlación sin registrar credenciales    | health, X-Request-ID                 | `test_health_and_security_headers`                                                |
 
 ## Historias y casos de uso
